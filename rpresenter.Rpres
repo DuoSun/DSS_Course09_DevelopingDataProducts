@@ -1,0 +1,72 @@
+Developing Data Product Week 4 Assignment 2
+========================================================
+author: Duo Sun
+date: 2018 Auguest 27
+autosize: true
+
+Prediction Model Comparison on Iris Data
+========================================================
+
+- The performance of five popular algorithms (LDA, KNN, SVM, Radom Forest, and CART) are compared on Iris data for prediction of iris species (setosa, versicolor, and virginica).
+- Iris data set is split into training and validation data sets.
+- 10-folder cross-validation is used on training dataset to train the models and estimate the prediction accuracy.
+- The built models are also tested on validation data."
+
+Model Training Results
+========================================================
+
+```{r,echo=FALSE}
+  # Load library and iris data
+  library(caret)
+  library(e1071)
+  library(randomForest)
+  data(iris)
+  dataset_all <- iris
+  
+  # Split out validation dataset
+  set.seed(1);
+  validation_index <- createDataPartition(dataset_all$Species, p=0.80, list=FALSE)
+  validation <- dataset_all[-validation_index,]
+  dataset <- dataset_all[validation_index,]
+  
+  # Run algorithms using 10-fold cross validation
+  control <- trainControl(method="cv", number=10); metric <- "Accuracy" 
+  
+  # Train algorithms
+  set.seed(0);fit.lda <- train(Species~., data=dataset, method="lda", metric=metric, trControl=control)  
+  set.seed(0);fit.cart <- train(Species~., data=dataset, method="rpart", metric=metric, trControl=control)  
+  set.seed(0);fit.knn <- train(Species~., data=dataset, method="knn", metric=metric, trControl=control)  
+  set.seed(0);fit.svm <- train(Species~., data=dataset, method="svmRadial", metric=metric, trControl=control)  
+  set.seed(0);fit.rf <- train(Species~., data=dataset, method="rf", metric=metric, trControl=control)  
+  
+  # Compare algorithms based on estimated prediction performance
+  results <- resamples(list(lda=fit.lda, cart=fit.cart, knn=fit.knn, svm=fit.svm, rf=fit.rf))
+  
+  # Display training results
+  dotplot(results)
+```
+
+Estimated Model Accurancy vs Measured Accurancy
+========================================================
+
+```{r, echo=FALSE}
+  # Display accurancy performance on validation data and compare with estimated values
+  predictions.lda <- predict(fit.lda, newdata=validation)
+  accuracy.lda    <- confusionMatrix(predictions.lda, validation$Species)$overall["Accuracy"]
+  predictions.cart<- predict(fit.cart, newdata=validation)
+  accuracy.cart   <- confusionMatrix(predictions.cart, validation$Species)$overall["Accuracy"]
+  predictions.knn <- predict(fit.knn, newdata=validation)
+  accuracy.knn    <- confusionMatrix(predictions.knn, validation$Species)$overall["Accuracy"]
+  predictions.svm <- predict(fit.svm, newdata=validation)
+  accuracy.svm    <- confusionMatrix(predictions.svm, validation$Species)$overall["Accuracy"]
+  predictions.rf  <- predict(fit.rf, newdata=validation)
+  accuracy.rf     <- confusionMatrix(predictions.rf, validation$Species)$overall["Accuracy"]
+  data.frame("Algorithm"=c("lda","cart","knn","svm","rf"),"Estimated Accuracy"=sapply(results$values[,c(2,4,6,8,10)],mean),
+             "Validation Accuracy" = c(accuracy.lda,accuracy.cart,accuracy.knn,accuracy.svm,accuracy.rf))
+```
+
+For More Info
+========================================================
+
+- Web App <https://duosun.shinyapps.io/C9_DPP_W4P/>
+- Github Source Code <https://github.com/DuoSun/DSS_Course09_DevelopingDataProducts>.
